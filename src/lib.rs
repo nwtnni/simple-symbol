@@ -46,7 +46,7 @@ impl Table {
     }
 }
 
-#[derive(Copy, Clone, PartialEq, Eq)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Symbol {
     index: usize,
 }
