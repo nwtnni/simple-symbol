@@ -1,6 +1,4 @@
 [package]
-name = "sym"
+name = "simple-symbol"
 version = "0.1.0"
 authors = ["Newton Ni <nwtnni@gmail.com>"]
-
-[dependencies]

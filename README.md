@@ -1,4 +1,4 @@
-# sym
+# simple-symbol
 
 There are already a lot of string interning libraries out there, so this one is mostly
 just for my personal use case: writing a compiler without passing around a struct
@@ -7,18 +7,18 @@ everywhere.
 ## Usage
 
 ```rust
-extern crate sym;
+extern crate simple_symbol;
 
-use sym;
+use simple_symbol::store;
 
 fn main() {
   
-  let symbol_a = sym::store("String");
-  let symbol_b = sym::store("String"); 
+  let symbol_a = store("String");
+  let symbol_b = store("String"); 
   
   assert_eq!(symbol_a, symbol_b);
 
-  let symbol_c = sym::store("string");
+  let symbol_c = store("string");
 
   assert_ne!(symbol_a, symbol_c);
 
@@ -38,3 +38,4 @@ query the global `SYMBOL_TABLE` struct when printing or converting.
 
 - Single thread only (uses `thread_local!` macro)
 - Allocates every `String` twice (once as a `HashMap` key, once as a `Vec` entry)
+- Currently no garbage-collecting mechanism for unused cached Strings.

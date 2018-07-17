@@ -9,16 +9,18 @@ thread_local! {
     };
 }
 
+/// Create a Symbol from the given &str and cache it for future reuse.
 pub fn store(s: &str) -> Symbol {
     SYMBOL_TABLE.with(|table| table.borrow_mut().store(s))
 }
 
-fn read(s: Symbol) -> String {
-    SYMBOL_TABLE.with(|table| table.borrow().read(s).to_string())
+/// Access a Symbol's cached String without reallocating.
+pub fn read_with<F, T>(s: Symbol, f: F) -> T where F: FnOnce(&str) -> T {
+    SYMBOL_TABLE.with(|table| f(table.borrow().read(s)))
 }
 
-fn read_with<F, T>(s: Symbol, f: F) -> T where F: FnOnce(&str) -> T {
-    SYMBOL_TABLE.with(|table| f(table.borrow().read(s)))
+fn read(s: Symbol) -> String {
+    SYMBOL_TABLE.with(|table| table.borrow().read(s).to_string())
 }
 
 #[derive(Default)]
@@ -46,6 +48,46 @@ impl Table {
     }
 }
 
+/// # Summary
+///
+/// Represents a cached String.
+///
+/// Offers cheap, fast comparison via `usize` index.
+/// Easily converted to a new String, and can be transparently
+/// debugged or displayed.
+///
+/// # Example
+///
+/// ```rust
+/// extern crate simple_symbol;
+///
+/// use std::str::FromStr;
+/// use simple_symbol::{store, Symbol};
+///
+/// pub fn main() {
+///
+///     let symbol_a: Symbol = store("Test");
+///     let symbol_b: Symbol = Symbol::from_str("Test").unwrap();
+///
+///     assert_eq!(symbol_a, symbol_b);
+///
+///     assert_eq!(
+///         format!("{}", "Test".to_string()),
+///         format!("{}", symbol_a)
+///     );
+///
+///     assert_eq!(
+///         format!("{:?}", "Test".to_string()),
+///         format!("{:?}", symbol_a)
+///     );
+///
+///     let converted: String = symbol_a.into();
+///
+///     assert_eq!("Test".to_string(), converted);
+///
+/// }
+/// ```
+///
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Symbol {
     index: usize,
