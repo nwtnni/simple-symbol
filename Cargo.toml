@@ -1,11 +1,10 @@
 [package]
 name = "simple-symbol"
-version = "0.1.0"
+version = "1.0.0"
 authors = ["Newton Ni <nwtnni@gmail.com>"]
 description = "Convenient, basic String interning."
 documentation = "https://docs.rs/simple-symbol"
 repository = "https://github.com/nwtnni/simple-symbol"
 readme = "README.md"
 keywords = ["interning", "intern", "cache", "symbol"]
-license = "MIT"
 license-file = "LICENSE"

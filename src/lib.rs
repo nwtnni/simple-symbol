@@ -88,7 +88,7 @@ impl Table {
 /// }
 /// ```
 ///
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Symbol {
     index: usize,
 }

@@ -39,3 +39,13 @@ query the global `SYMBOL_TABLE` struct when printing or converting.
 - Single thread only (uses `thread_local!` macro)
 - Allocates every `String` twice (once as a `HashMap` key, once as a `Vec` entry)
 - Currently no garbage-collecting mechanism for unused cached Strings.
+
+## Changelog
+
+**1.0.0**
+
+Derive `PartialOrd` and `Ord` for `Symbol` for easier use as keys in crates like `petgraph`.
+
+**0.1.0**
+
+Initial implementation.
