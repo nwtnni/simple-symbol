@@ -4,48 +4,50 @@ There are already a lot of string interning libraries out there, so this one is 
 just for my personal use case: writing a compiler without passing around a struct
 everywhere.
 
-## Usage
+## Example
 
 ```rust
-extern crate simple_symbol;
+use simple_symbol::{intern, resolve};
 
-use simple_symbol::store;
+pub fn main() {
+    let a = intern("A");
+    let b = intern("A");
 
-fn main() {
-  
-  let symbol_a = store("String");
-  let symbol_b = store("String"); 
-  
-  assert_eq!(symbol_a, symbol_b);
+    assert_eq!(a, a);
 
-  let symbol_c = store("string");
+    let c = intern("B");
 
-  assert_ne!(symbol_a, symbol_c);
+    assert_ne!(a, c);
+    assert_ne!(b, c);
 
-  // Prints "String"
-  println!("{}", symbol_a);
+    // Prints "A"
+    println!("{}", a);
 
-  let original: String = symbol_a.into();
-
-  assert_eq!(original, "String".to_string());
+    let str_a = resolve(a);
+    
+    assert_eq!(str_a, "A");
 }
 ```
 
 Symbols are compared via `usize` indices, and automatically
-query the global `SYMBOL_TABLE` struct when printing or converting.
+query the global `INTERNER` struct when printing or converting.
 
 ## Limitations
 
-- Single thread only (uses `thread_local!` macro)
-- Allocates every `String` twice (once as a `HashMap` key, once as a `Vec` entry)
-- Currently no garbage-collecting mechanism for unused cached Strings.
+Leaks all interned Strings for the duration of the program. Unsuitable for long-running programs.
 
 ## Changelog
 
-**1.0.0**
+- 2.0.0
 
-Derive `PartialOrd` and `Ord` for `Symbol` for easier use as keys in crates like `petgraph`.
+  * Leak Strings instead of double-allocating.
+  * Change to RwLock and use `lazy_static` to support multi-threaded programs.
+  * Update API.
 
-**0.1.0**
+- 1.0.0
 
-Initial implementation.
+  * Derive `PartialOrd` and `Ord` for `Symbol` for easier use as keys in crates like `petgraph`.
+
+- 0.1.0
+
+  * Initial implementation.
