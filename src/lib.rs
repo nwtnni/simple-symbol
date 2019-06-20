@@ -1,10 +1,12 @@
-use std::borrow::Cow;
-use std::cell::RefCell;
-use std::collections::HashMap as Map;
+use std::borrow;
+use std::sync;
+use std::collections::HashMap;
 
-thread_local! {
+use lazy_static::lazy_static;
+
+lazy_static! {
     /// Global cache of interned strings
-    static INTERNER: RefCell<Interner> = RefCell::new(Interner::default());
+    static ref INTERNER: sync::RwLock<Interner> = Default::default();
 }
 
 /// Implements naive string internment.
@@ -16,7 +18,7 @@ thread_local! {
 /// is intentionally leaked for the duration of the program.
 #[derive(Debug, Default)]
 pub struct Interner {
-    index: Map<&'static str, usize>,
+    index: HashMap<&'static str, usize>,
     store: Vec<&'static str>,
 }
 
@@ -54,7 +56,7 @@ pub struct Symbol(usize);
 
 impl Interner {
     /// Store `string` in this interner if not already cached.
-    fn intern<'a, S>(&mut self, string: S) -> Symbol where S: Into<Cow<'a, str>> {
+    fn intern<'a, S>(&mut self, string: S) -> Symbol where S: Into<borrow::Cow<'a, str>> {
         let cow = string.into();
         if let Some(&index) = self.index.get(cow.as_ref()) {
             Symbol(index)
@@ -76,17 +78,17 @@ impl Interner {
 }
 
 /// Look up `string` in the global cache, and insert it if missing.
-pub fn intern<'a, S>(string: S) -> Symbol where S: Into<Cow<'a, str>> {
-    INTERNER.with(|interner| {
-        interner.borrow_mut().intern(string)
-    })
+pub fn intern<'a, S>(string: S) -> Symbol where S: Into<borrow::Cow<'a, str>> {
+    INTERNER.write()
+        .expect("[INTERNAL ERROR]: poisoned lock")
+        .intern(string)
 }
 
 /// Resolve `symbol` to its string representation.
 pub fn resolve(symbol: Symbol) -> &'static str {
-    INTERNER.with(|interner| {
-        interner.borrow().resolve(symbol)
-    })
+    INTERNER.read()
+        .expect("[INTERNAL ERROR]: poisoned lock")
+        .resolve(symbol)
 }
 
 impl From<Symbol> for &'static str {
