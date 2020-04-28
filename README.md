@@ -38,6 +38,11 @@ Leaks all interned Strings for the duration of the program. Unsuitable for long-
 
 ## Changelog
 
+- 3.0.0
+
+  * Change `intern` function to take the more common `S: AsRef<str>` instead of `S: Into<Cow<'a, str>>`.
+  * Add a new `intern_static` function to avoid leaking already `'static` data.
+
 - 2.0.0
 
   * Leak Strings instead of double-allocating.

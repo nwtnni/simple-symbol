@@ -1,6 +1,6 @@
 [package]
 name = "simple-symbol"
-version = "2.0.0"
+version = "3.0.0"
 authors = ["Newton Ni <nwtnni@gmail.com>"]
 description = "Convenient, basic String interning."
 documentation = "https://docs.rs/simple-symbol"

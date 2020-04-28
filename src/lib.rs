@@ -1,4 +1,3 @@
-use std::borrow;
 use std::sync;
 use std::collections::HashMap;
 
@@ -14,8 +13,9 @@ lazy_static! {
 /// Requires O(n) heap space to store unique strings, in
 /// return for O(1) symbol equality checks and faster symbol hashing.
 ///
-/// Does not garbage collect interned strings: the memory
+/// Does **NOT** garbage collect interned strings: the memory
 /// is intentionally leaked for the duration of the program.
+/// This is only suitable for short-lived processes (e.g. compilers).
 #[derive(Debug, Default)]
 pub struct Interner {
     index: HashMap<&'static str, usize>,
@@ -56,38 +56,62 @@ pub struct Symbol(usize);
 
 impl Interner {
     /// Store `string` in this interner if not already cached.
-    fn intern<'a, S>(&mut self, string: S) -> Symbol where S: Into<borrow::Cow<'a, str>> {
-        let cow = string.into();
-        if let Some(&index) = self.index.get(cow.as_ref()) {
-            Symbol(index)
-        } else {
-            let owned = cow.into_owned().into_boxed_str();
+    fn intern<S: AsRef<str>>(&mut self, string: S) -> Symbol {
+        let string = string.as_ref();
+        match self.index.get(string) {
+        | Some(&index) => Symbol(index),
+        | None => {
+            let owned = string.to_owned().into_boxed_str();
             let leaked = Box::leak(owned);
             let index = self.store.len();
             self.store.push(leaked);
             self.index.insert(leaked, index);
             Symbol(index)
         }
+        }
+    }
+
+    /// Store static `string` (without leaking memory) in this interner if
+    /// not already cached.
+    fn intern_static(&mut self, string: &'static str) -> Symbol {
+        match self.index.get(string) {
+        | Some(&index) => Symbol(index),
+        | None => {
+            let index = self.store.len();
+            self.store.push(string);
+            self.index.insert(string, index);
+            Symbol(index)
+        }
+        }
     }
 
     /// Resolve `symbol` in this interner.
-    /// Requires that `symbol` was produced by this interner.
+    ///
+    /// Panics if `symbol` was produced by this interner.
     fn resolve(&self, symbol: Symbol) -> &'static str {
         self.store[symbol.0]
     }
 }
 
 /// Look up `string` in the global cache, and insert it if missing.
-pub fn intern<'a, S>(string: S) -> Symbol where S: Into<borrow::Cow<'a, str>> {
+pub fn intern<S: AsRef<str>>(string: S) -> Symbol {
     INTERNER.write()
-        .expect("[INTERNAL ERROR]: poisoned lock")
+        .expect("[INTERNAL ERROR]: poisoned global interner lock")
         .intern(string)
+}
+
+/// Look up static `string` in the global cache, and insert it without allocating
+/// if it is missing.
+pub fn intern_static(string: &'static str) -> Symbol {
+    INTERNER.write()
+        .expect("[INTERNAL ERROR]: poisoned global interner lock")
+        .intern_static(string)
 }
 
 /// Resolve `symbol` to its string representation.
 pub fn resolve(symbol: Symbol) -> &'static str {
     INTERNER.read()
-        .expect("[INTERNAL ERROR]: poisoned lock")
+        .expect("[INTERNAL ERROR]: poisoned global interner lock")
         .resolve(symbol)
 }
 
