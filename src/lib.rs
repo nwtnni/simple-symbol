@@ -1,5 +1,8 @@
-use std::sync;
+use std::cmp;
 use std::collections::HashMap;
+use std::fmt;
+use std::str;
+use std::sync;
 
 use lazy_static::lazy_static;
 
@@ -47,11 +50,11 @@ pub struct Interner {
 ///     println!("{}", a);
 ///
 ///     let str_a = resolve(a);
-///     
+///
 ///     assert_eq!(str_a, "A");
 /// }
 /// ```
-#[derive(Copy, Clone, Eq, Hash, Ord, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, Eq, Hash, Ord, PartialEq)]
 pub struct Symbol(usize);
 
 impl Interner {
@@ -121,21 +124,27 @@ impl From<Symbol> for &'static str {
     }
 }
 
-impl std::str::FromStr for Symbol {
+impl str::FromStr for Symbol {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(intern(s))
     }
 }
 
-impl std::fmt::Debug for Symbol {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl cmp::PartialOrd for Symbol {
+    fn partial_cmp(&self, other: &Self) -> Option<cmp::Ordering> {
+        resolve(*self).partial_cmp(resolve(*other))
+    }
+}
+
+impl fmt::Debug for Symbol {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{:?}", resolve(*self))
     }
 }
 
-impl std::fmt::Display for Symbol {
-    fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl fmt::Display for Symbol {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "{}", resolve(*self))
     }
 }
@@ -183,5 +192,15 @@ mod tests {
     fn test_display() {
         let symbol = intern("Display");
         assert_eq!(format!("{}", symbol), format!("{}", "Display".to_string()));
+    }
+
+    #[test]
+    fn test_cmp() {
+        let y = intern("y");
+        let z = intern("z");
+        let x = intern("x");
+        assert!(x < y);
+        assert!(y < z);
+        assert!(x < z);
     }
 }
