@@ -4,12 +4,10 @@ use std::fmt;
 use std::str;
 use std::sync;
 
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 
-lazy_static! {
-    /// Global cache of interned strings
-    static ref INTERNER: sync::RwLock<Interner> = Default::default();
-}
+/// Global cache of interned strings
+static INTERNER: Lazy<sync::RwLock<Interner>> = Lazy::new(|| Default::default());
 
 /// Implements naive string internment.
 ///
